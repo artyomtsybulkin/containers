@@ -1,6 +1,6 @@
 # Update freshly installed system in Minimal mode
 dnf install -y epel-release && dnf update -y
-dnf install -y nano curl wget hyperv* fping nmap-ncat glibc-all-langpacks git
+dnf install -y nano curl wget hyperv* fping nmap-ncat glibc-all-langpacks git zram-generator
 
 # Install Docker
 dnf install -y dnf-plugins-core
