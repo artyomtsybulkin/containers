@@ -44,7 +44,6 @@ echo \
   tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt update
 
-
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Configure Hyper-V
@@ -55,7 +54,7 @@ ln -s /usr/sbin/hv_get_dns_info /usr/libexec/hypervkvpd/hv_get_dns_info
 echo "blacklist hv_balloon" >> /etc/modprobe.d/blacklist-hv_balloon.conf
 
 # Firewall
-# Remember DOcker bypass iptables by default
+# Remember Docker bypass iptables by default
 apt install ufw
 ufw default deny incoming && ufw default allow outgoing
 ufw allow ssh && ufw enable && ufw reload
@@ -72,4 +71,3 @@ curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
   curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
   gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg && \
   apt update && apt install -y 1password-cli
-
