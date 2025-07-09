@@ -1,0 +1,197 @@
+# Description: Zabbix Server 7.0 LTS
+# ==============================================================================
+# Networks
+networks:
+  private_net:
+    name: private_net
+    driver: overlay
+    attachable: true
+    ipam:
+      config:
+        - subnet: 10.10.90.0/24
+
+  public_net:
+    name: public_net
+    driver: overlay
+    attachable: true
+    ipam:
+      config:
+        - subnet: 10.10.91.0/24
+# ==============================================================================
+# Volumes
+volumes:
+  zabbix-db:                { name: zabbix-db }
+  zabbix-psk:               { name: zabbix-psk }
+  zabbix-mod:               { name: zabbix-mod }
+  zabbix-alerts:            { name: zabbix-alerts }
+  zabbix-externals:         { name: zabbix-externals }
+  zabbix-server:            { name: zabbix-server }
+  zabbix-java:              { name: zabbix-java }
+  zabbix-export:            { name: zabbix-export }
+  zabbix-nginx:             { name: zabbix-nginx }
+  zabbix-snmptraps:         { name: zabbix-snmptraps }
+  zabbix-snmpmibs:          { name: zabbix-snmpmibs }
+  zabbix-snmpconf:          { name: zabbix-snmpconf }
+  zabbix-agent:             { name: zabbix-agent }
+# ==============================================================================
+# Services
+services:
+# ==============================================================================
+# Database
+  zabbix-db:
+    image: postgres:17-alpine
+    container_name: zabbix-db
+    restart: unless-stopped
+    shm_size: 128mb
+    networks: [ private_net ]
+    environment:
+      PGUSER: postgres
+      POSTGRES_PASSWORD: ${PGPASS}
+    volumes:
+      - zabbix-db:/var/lib/postgresql/data
+    command: >
+      sh -c "
+        echo 'Creating zabbix user...';
+        docker-entrypoint.sh postgres &
+        until pg_isready; do sleep 5; done;
+        psql -v -U postgres -c \"CREATE USER ${DBUSER} WITH PASSWORD '${DBPASS}';\";
+        psql -v -U postgres -c \"ALTER USER ${DBUSER} WITH CREATEDB;\";
+        tail -f /dev/null;
+      "
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+# ==============================================================================
+# SNMP
+  zabbix-snmp:
+    image: zabbix/zabbix-snmptraps:alpine-7.0-latest
+    container_name: zabbix-snmp
+    restart: unless-stopped
+    networks: [ private_net, public_net ]
+    volumes:
+      - zabbix-snmptraps:/var/lib/zabbix/snmptraps:rw
+      - zabbix-snmpmibs:/usr/share/snmp/mibs:ro
+      - zabbix-snmpconf:/var/lib/zabbix/snmptrapd_config:rw
+    ports: ["0.0.0.0:162:1162/udp"]
+    depends_on: [zabbix-server]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pidof snmptrapd"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+# ==============================================================================
+# Zabbix Server
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-7.0-latest
+    container_name: zabbix-server
+    restart: unless-stopped
+    networks: [ private_net, public_net ]
+    environment:
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: ${DBUSER}
+      POSTGRES_PASSWORD: ${DBPASS}
+      POSTGRES_DB: zabbix
+      ZBX_ENABLE_SNMP_TRAPS: "true"
+      ZBX_TIMEOUT: 30
+      ZBX_STARTIPMIPOLLERS: 1
+      ZBX_CACHESIZE: 256M
+      ZBX_VALUECACHESIZE: 256M
+      ZBX_STARTCONNECTORS: 2
+      ZBX_STARTREPORTWRITERS: 5
+      ZBX_WEBSERVICEURL: http://zabbix-web:10053/report
+      ZBX_JAVAGATEWAY_ENABLE: "true"
+      ZBX_STARTJAVAPOLLERS: 5
+      ZBX_JAVAGATEWAY: zabbix-java
+      ZBX_JAVAGATEWAYPORT: 10052
+    ports: ["0.0.0.0:10051:10051"]
+    volumes:
+      - zabbix-snmptraps:/var/lib/zabbix/snmptraps:rw
+      - zabbix-export:/var/lib/zabbix/export:rw
+      - zabbix-alerts:/usr/lib/zabbix/alertscripts:rw
+      - zabbix-externals:/usr/lib/zabbix/externalscripts:rw
+      - zabbix-mod:/var/lib/zabbix/modules
+      - zabbix-psk:/var/lib/zabbix/enc:ro
+    depends_on: [ zabbix-db ]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pidof zabbix_server"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+# ==============================================================================
+# Java Gateway
+  zabbix-java:
+    image: zabbix/zabbix-java-gateway:alpine-7.0-latest
+    container_name: zabbix-java
+    restart: unless-stopped
+    networks: [ private_net ]
+    environment:
+      ZBX_START_POLLERS: 5
+      ZBX_DEBUGLEVEL: error
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_TIMEOUT: 30
+    volumes:
+      - zabbix-java:/usr/sbin/zabbix_java/ext_lib
+    depends_on: [ zabbix-db, zabbix-server ]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pidof java"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+# ==============================================================================
+# Nginx (PHP-FPM)
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.0-latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    networks: [ private_net, public_net ]
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_NAME: ${HOSTNAME}
+      DB_SERVER_HOST: zabbix-db
+      POSTGRES_USER: ${DBUSER}
+      POSTGRES_PASSWORD: ${DBPASS}
+      POSTGRES_DB: zabbix
+      PHP_TZ: ${PHPTZ}
+      EXPOSE_WEB_SERVER_INFO: off
+      # ZBX_SSO_SETTINGS:
+      # ZBX_SSO_SP_KEY:
+      # ZBX_SSO_SP_CERT:
+      # ZBX_SSO_IDP_CERT:
+    ports: ["0.0.0.0:443:8443", "0.0.0.0:80:8080"]
+    volumes:
+      - zabbix-nginx:/etc/ssl/nginx:ro
+    depends_on: [ zabbix-server ]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+# ==============================================================================
+# Zabbix Agent
+  zabbix-agent:
+    image: zabbix/zabbix-agent2:alpine-7.0-latest
+    container_name: zabbix-agent
+    restart: unless-stopped
+    networks: [ private_net ]
+    environment:
+      ZBX_HOSTNAME: ${HOSTNAME}
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_TIMEOUT: 30
+      ZBX_MAXLINESPERSECOND: 20
+      ZBX_TLSCONNECT: unencrypted
+      ZBX_TLSACCEPT: unencrypted
+      # ZBX_TLSPSKIDENTITY=
+      # ZBX_TLSPSKFILE=
+      # ZBX_TLSPSK=
+    volumes:
+      - zabbix-agent:/etc/zabbix/zabbix_agentd.d
+      - zabbix-mod:/var/lib/zabbix/modules
+      - zabbix-psk:/var/lib/zabbix/enc:ro
+    depends_on: [ zabbix-server ]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pidof zabbix_agent2"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
