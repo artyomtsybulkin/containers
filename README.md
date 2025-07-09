@@ -3,6 +3,8 @@ Containers related items
 
 ## Host installation
 
+
+Source: https://ubuntu.com/download/server
 Source: https://docs.docker.com/engine/install/ubuntu/
 
 | Stage | Description |
@@ -11,6 +13,6 @@ Source: https://docs.docker.com/engine/install/ubuntu/
 | OS | Ubuntu Server LTS |
 | Language/Layout | English (US) |
 | Install mode | Ubuntu Server (minimized) |
-| Storage | LVM = Disable |
-| Filesystem | ext4 => xfs |
+| Storage | Disable LVM |
+| Filesystem | Change ext4 => xfs |
 | OpenSSH | Enable |
