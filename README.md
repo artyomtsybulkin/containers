@@ -3,6 +3,7 @@ Containers related items
 
 ## Host installation
 
+
 - **Base system:** Hyper-V Virtual Machine
 - **Linux Distribution:** I prefer to use latest LTS version of Ubuntu Server
 - **Language:** Choose language and keyboard layout: English (US)
@@ -11,3 +12,8 @@ Containers related items
 - **OpenSSH:** Install OpenSSH server set to Enable
 
 Source: https://docs.docker.com/engine/install/ubuntu/
+
+| Stage | Description |
+| :--- | :--- |
+| Base System | Hyper-V virtual machine |
+| OS | Ubuntu Server LTS |
