@@ -34,10 +34,9 @@ This repository contains resources and scripts related to containerized environm
 
 ## Hyper-V Automation
 
-- Hyper-V VM Provisioning Script: [`New-DockerVM.ps1`](./New-DockerVM.ps1)  
+- Hyper-V VM Provisioning Script: [`New-DockerVM.ps1`](./vm/New-DockerVM.ps1)  
   Automates the creation and clustering of a new Hyper-V virtual machine for Ubuntu Server and Docker workloads.
 
 - Ubuntu Post-Install Configuration Script:
-  [`configure.sh`](./configure.sh)  
+  [`configure.sh`](./vm/configure.sh)  
   Automates essential post-installation steps on Ubuntu Server, such as system updates, Docker installation, and basic configuration for container workloads.
-  
