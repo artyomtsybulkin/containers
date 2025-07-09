@@ -4,7 +4,8 @@ Containers related items
 ## Host installation
 
 > [!TIP]
-> - [x] I prefer to use latest LTS version of Ubuntu Server
+> - **Base system:** Hyper-V Virtual Machine
+> - **Distribution** I prefer to use latest LTS version of Ubuntu Server
 > - [x] Choose language and keyboard layout: English (US)
 > - [x] Source: https://docs.docker.com/engine/install/ubuntu/
 > - [x] Type of installation: Ubuntu Server (minimized)
