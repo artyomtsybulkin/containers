@@ -4,10 +4,10 @@ Containers related items
 ## Host installation
 
 > [!TIP]
-> - [ ] I prefer to use latest LTS version of Ubuntu Server
-> 2. Choose language and keyboard layout: English (US)
-> 3. Source: https://docs.docker.com/engine/install/ubuntu/
-> 4. Type of installation: Ubuntu Server (minimized)
-> 5. Install OpenSSH server - Enable
-> 6. Disable LVM
-> 7. Change filesystem to XFS instead of EXT4
+> - [x] I prefer to use latest LTS version of Ubuntu Server
+> - [x] Choose language and keyboard layout: English (US)
+> - [x] Source: https://docs.docker.com/engine/install/ubuntu/
+> - [x] Type of installation: Ubuntu Server (minimized)
+> - [x] Install OpenSSH server - Enable
+> - [x] Disable LVM
+> - [x] Change filesystem to XFS instead of EXT4
